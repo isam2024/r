@@ -1,0 +1,1078 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt Roulette v2 (beta)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .spin-all-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .spin-all-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .spin-all-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .multi-gen-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .multi-gen-input {
+            padding: 8px 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1em;
+            width: 80px;
+            text-align: center;
+        }
+
+        .multi-gen-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .multi-gen-btn {
+            background: linear-gradient(45deg, #e17055, #fd79a8);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .multi-gen-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .multi-gen-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .category {
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .category.active {
+            transform: scale(1.02);
+            box-shadow: inset 0 0 0 3px rgba(255,255,255,0.5);
+        }
+
+        .category.completed {
+            opacity: 0.7;
+        }
+
+        .category:nth-child(1) { background: #ff7675; }
+        .category:nth-child(2) { background: #74b9ff; }
+        .category:nth-child(3) { background: #55a3ff; }
+        .category:nth-child(4) { background: #fdcb6e; }
+        
+        /* Advanced category colors */
+        .category:nth-child(5) { background: #6c5ce7; }  /* Purple - Color/Lighting */
+        .category:nth-child(6) { background: #a29bfe; }  /* Light Purple - Perspective */
+        .category:nth-child(7) { background: #fd79a8; }  /* Pink - Time/Era */
+        .category:nth-child(8) { background: #00b894; }  /* Teal - Weather */
+        .category:nth-child(9) { background: #00cec9; }  /* Cyan - Emotion */
+        .category:nth-child(10) { background: #e17055; } /* Orange - Scale */
+        .category:nth-child(11) { background: #81ecec; } /* Light Cyan - Movement */
+        .category:nth-child(12) { background: #fab1a0; } /* Light Orange - Texture */
+
+        .category h2 {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .spin-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 15px 0;
+            width: 100%;
+        }
+
+        .spin-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .spin-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .next-btn {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            width: 100%;
+            display: none;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .options {
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .option:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            background: rgba(255,255,255,0.4);
+            font-weight: bold;
+            transform: scale(1.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .option.spinning {
+            animation: spin-highlight 0.1s ease-in-out;
+        }
+
+        @keyframes spin-highlight {
+            0% { background: rgba(255,255,255,0.1); }
+            50% { background: rgba(255,255,255,0.6); transform: scale(1.02); }
+            100% { background: rgba(255,255,255,0.1); }
+        }
+
+        .option input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .option-number {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 25px;
+            text-align: center;
+        }
+
+        .final-prompt {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            display: none;
+        }
+
+        .final-prompt h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .prompt-result {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            font-size: 1.3em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.2);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Scrollbar styling */
+        .options::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .options::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+
+        .options::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+
+        .options::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        /* Advanced mode toggle */
+        .advanced-toggle {
+            margin-top: 15px;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-label input[type="checkbox"] {
+            display: none;
+        }
+
+        .toggle-slider {
+            width: 50px;
+            height: 25px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 25px;
+            position: relative;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 21px;
+            height: 21px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-label input[type="checkbox"]:checked + .toggle-slider {
+            background: rgba(255,255,255,0.6);
+        }
+
+        .toggle-label input[type="checkbox"]:checked + .toggle-slider::before {
+            transform: translateX(25px);
+        }
+
+        .toggle-text {
+            color: white;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        /* Advanced categories styling */
+        .categories.advanced {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .categories.advanced .category {
+            min-height: 400px;
+        }
+
+        /* Multi-results styling */
+        .multi-results {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .multi-results h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .multi-results-container {
+            max-height: 500px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .multi-prompt-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .multi-prompt-number {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-right: 15px;
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .multi-results-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+    </style>
+<script defer data-domain="amaranth-veda-54.tiiny.site" src="https://analytics.tiiny.site/js/plausible.js"></script><script type="text/javascript" src="https://tiiny.host/ad-script.js"></script><script defer data-domain="amaranth-veda-54.tiiny.site" src="https://analytics.tiiny.site/js/plausible.js"></script><script type="text/javascript" src="https://tiiny.host/ad-script.js"></script></head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎰 AI Prompt Roulette</h1>
+            <p>Spin the wheel to generate unique AI prompt combinations!</p>
+            
+            <button class="spin-all-btn" id="spinAllBtn" onclick="spinAll()">
+                🎰 Spin All
+            </button>
+            
+            <div class="multi-gen-controls">
+                <input type="number" class="multi-gen-input" id="multiGenCount" value="5" min="1" max="50" placeholder="5">
+                <button class="multi-gen-btn" id="multiGenBtn" onclick="multiGenerate()">
+                    🎲 Multi-Roll
+                </button>
+            </div>
+            
+            <div class="advanced-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" id="advancedMode" onchange="toggleAdvancedMode()">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">🎨 Advanced Categories (8 extra wheels)</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="categories" id="categories">
+            <!-- Categories will be populated by JavaScript -->
+        </div>
+
+        <div class="final-prompt" id="finalPrompt">
+            <h2>🎊 Your AI Prompt is Ready!</h2>
+            <div class="prompt-result" id="promptResult"></div>
+            <button class="reset-btn" onclick="resetGame()">🎲 Generate Another Prompt</button>
+        </div>
+
+        <div class="multi-results" id="multiResults" style="display: none;">
+            <h2>🎲 Multi-Roll Results</h2>
+            <div class="multi-results-container" id="multiResultsContainer">
+                <!-- Multi-roll results will be populated here -->
+            </div>
+            <div class="multi-results-actions">
+                <button class="reset-btn" onclick="resetGame()">🎲 Generate More</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const categories = [
+            {
+                name: "Style/Medium",
+                options: [
+                    "Photorealistic", "Oil Painting", "Digital Art", "Watercolor", "Pencil Sketch", 
+                    "3D Render", "Pixel Art", "Minimalist", "Vintage", "Film Photography",
+                    "Impressionist", "Abstract", "Pop Art", "Surrealist", "Concept Art",
+                    "Comic Book", "Anime Style", "Charcoal Drawing", "Pastel", "Graffiti Art",
+                    "Stained Glass", "Mosaic", "Sculpture", "Collage"
+                ]
+            },
+            {
+                name: "Subject/Theme",
+                options: [
+                    "Portrait", "Landscape", "Sci-Fi", "Fantasy", "Abstract", "Architecture", 
+                    "Nature", "Character Design", "Still Life", "Urban", "Wildlife", "Space",
+                    "Underwater", "Forest", "Desert", "Mountains", "Cyberpunk", "Steampunk",
+                    "Medieval", "Futuristic", "Mythological", "Horror", "Romance", "Adventure"
+                ]
+            },
+            {
+                name: "Mood/Atmosphere",
+                options: [
+                    "Dramatic", "Serene", "Mysterious", "Vibrant", "Dark", "Ethereal", 
+                    "Energetic", "Melancholic", "Surreal", "Nostalgic", "Peaceful", "Intense",
+                    "Dreamy", "Ominous", "Joyful", "Contemplative", "Chaotic", "Elegant",
+                    "Rustic", "Luxurious", "Playful", "Somber", "Whimsical", "Powerful"
+                ]
+            },
+            {
+                name: "Technical/Composition",
+                options: [
+                    "Close-up", "Wide Angle", "High Contrast", "Soft Lighting", "Golden Hour", 
+                    "Black & White", "Motion Blur", "Sharp Focus", "Depth of Field", "Macro",
+                    "Bird's Eye View", "Low Angle", "Symmetrical", "Rule of Thirds", "Bokeh",
+                    "Long Exposure", "HDR", "Silhouette", "Backlit", "Dramatic Shadows",
+                    "Neon Lighting", "Natural Light", "Studio Lighting", "Vintage Filter"
+                ]
+            }
+        ];
+
+        const advancedCategories = [
+            {
+                name: "Color/Lighting",
+                options: [
+                    "Golden hour warmth", "Neon cyberpunk", "Monochromatic blue", "High contrast B&W", "Pastel dreams", 
+                    "Deep shadows", "Rim lighting", "Color splash", "Sepia tone", "Electric blues and purples",
+                    "Warm sunset glow", "Cool moonlight", "Vibrant rainbow", "Muted earth tones", "Dramatic chiaroscuro",
+                    "Soft diffused light", "Harsh fluorescent", "Candlelight flicker", "Prismatic reflections", "Gradient fade"
+                ]
+            },
+            {
+                name: "Perspective/Viewpoint",
+                options: [
+                    "Bird's eye view", "Worm's eye view", "Through a window", "Reflection in water", "Over the shoulder", 
+                    "First person POV", "Aerial perspective", "Underwater view", "From inside looking out", "Extreme close-up",
+                    "Dutch angle tilt", "Forced perspective", "Fisheye distortion", "Through a keyhole", "Mirror reflection",
+                    "Upside down view", "Corner of the eye", "Security camera angle", "Telescope view", "Microscope perspective"
+                ]
+            },
+            {
+                name: "Time/Era/Setting",
+                options: [
+                    "Victorian era", "1980s retro", "Post-apocalyptic", "Ancient Rome", "Wild West", 
+                    "Space age future", "Medieval times", "Art Deco 1920s", "Stone age", "Renaissance period",
+                    "Cyberpunk 2077", "Steampunk Victorian", "Ancient Egypt", "Feudal Japan", "Roaring twenties",
+                    "Great Depression", "Swinging sixties", "Disco seventies", "Grunge nineties", "Digital age 2000s"
+                ]
+            },
+            {
+                name: "Weather/Environment",
+                options: [
+                    "Heavy rainfall", "Thick fog", "Blazing sunshine", "Snowstorm", "Thunderstorm", 
+                    "Autumn mist", "Desert heat", "Ocean breeze", "Mountain air", "Urban smog",
+                    "Gentle drizzle", "Blizzard winds", "Humid jungle", "Crisp winter air", "Spring shower",
+                    "Tornado approaching", "Aurora borealis", "Heat waves", "Morning dew", "Sandstorm"
+                ]
+            },
+            {
+                name: "Emotion/Expression",
+                options: [
+                    "Intense concentration", "Pure joy", "Mysterious smile", "Deep contemplation", "Surprised wonder", 
+                    "Peaceful serenity", "Fierce determination", "Melancholic longing", "Childlike curiosity", "Confident stance",
+                    "Quiet introspection", "Explosive laughter", "Tender affection", "Brooding intensity", "Playful mischief",
+                    "Stoic resolve", "Gentle compassion", "Wild excitement", "Thoughtful concern", "Radiant happiness"
+                ]
+            },
+            {
+                name: "Scale/Size",
+                options: [
+                    "Macro detail", "Epic landscape", "Intimate portrait", "Vast cosmos", "Miniature world", 
+                    "Towering heights", "Microscopic view", "Panoramic sweep", "Life-size reality", "Gigantic proportions",
+                    "Ant's perspective", "Giant's viewpoint", "Dollhouse scale", "Architectural grandeur", "Cosmic scale",
+                    "Thumbnail sketch", "Monument size", "Particle level", "Continental view", "Molecular detail"
+                ]
+            },
+            {
+                name: "Movement/Action",
+                options: [
+                    "Frozen in time", "Motion blur", "Dynamic action", "Slow motion", "Time-lapse effect", 
+                    "Spinning rotation", "Graceful flow", "Explosive energy", "Gentle drift", "Rhythmic dance",
+                    "Sudden stop", "Fluid movement", "Jerky motion", "Smooth glide", "Rapid acceleration",
+                    "Pendulum swing", "Spiral motion", "Linear progression", "Circular orbit", "Zigzag pattern"
+                ]
+            },
+            {
+                name: "Texture/Material",
+                options: [
+                    "Rough stone", "Smooth silk", "Weathered wood", "Polished metal", "Soft fabric", 
+                    "Crystalline surface", "Organic curves", "Sharp edges", "Flowing liquid", "Cracked earth",
+                    "Velvet touch", "Rusty iron", "Glass transparency", "Leather worn", "Marble veined",
+                    "Fur texture", "Sand grains", "Ice crystals", "Paper texture", "Concrete rough"
+                ]
+            }
+        ];
+
+        let currentCategory = 0;
+        let selections = [];
+        let spinningInterval;
+        let isAdvancedMode = false;
+        let activeCategories = categories;
+        let isSpinningAll = false;
+        let isMultiGenerating = false;
+        let multiPrompts = [];
+
+        function toggleAdvancedMode() {
+            isAdvancedMode = document.getElementById('advancedMode').checked;
+            activeCategories = isAdvancedMode ? [...categories, ...advancedCategories] : categories;
+            
+            const categoriesContainer = document.getElementById('categories');
+            if (isAdvancedMode) {
+                categoriesContainer.classList.add('advanced');
+            } else {
+                categoriesContainer.classList.remove('advanced');
+            }
+            
+            resetGame();
+        }
+
+        function initializeGame() {
+            const categoriesContainer = document.getElementById('categories');
+            categoriesContainer.innerHTML = '';
+            
+            activeCategories.forEach((category, index) => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = `category ${index === 0 ? 'active' : ''}`;
+                categoryDiv.id = `category-${index}`; // Add unique ID for reliable selection
+                categoryDiv.innerHTML = `
+                    <h2>${category.name}</h2>
+                    <div class="controls">
+                        <button class="control-btn" onclick="selectAll(${index})">Select All</button>
+                        <button class="control-btn" onclick="selectNone(${index})">None</button>
+                    </div>
+                    <button class="spin-btn" id="spin-btn-${index}" onclick="spinCategory(${index})" ${index !== 0 ? 'disabled' : ''}>
+                        🎰 SPIN
+                    </button>
+                    <div class="options" id="options-${index}">
+                        ${category.options.map((option, optionIndex) => `
+                            <div class="option" onclick="toggleOption(${index}, ${optionIndex})">
+                                <input type="checkbox" checked onchange="toggleOption(${index}, ${optionIndex})">
+                                <span class="option-number">${optionIndex + 1}</span>
+                                <span>${option}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="next-btn" id="next-btn-${index}" onclick="nextCategory()" style="display: none;">
+                        ➡️ NEXT
+                    </button>
+                `;
+                categoriesContainer.appendChild(categoryDiv);
+            });
+            
+            updateProgress();
+        }
+
+        function toggleOption(categoryIndex, optionIndex) {
+            const option = document.querySelector(`#options-${categoryIndex} .option:nth-child(${optionIndex + 1})`);
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+        }
+
+        function selectAll(categoryIndex) {
+            const checkboxes = document.querySelectorAll(`#options-${categoryIndex} input[type="checkbox"]`);
+            checkboxes.forEach(checkbox => checkbox.checked = true);
+        }
+
+        function selectNone(categoryIndex) {
+            const checkboxes = document.querySelectorAll(`#options-${categoryIndex} input[type="checkbox"]`);
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+        }
+
+        function spinCategory(categoryIndex) {
+            const enabledOptions = [];
+            const checkboxes = document.querySelectorAll(`#options-${categoryIndex} input[type="checkbox"]`);
+            const optionElements = document.querySelectorAll(`#options-${categoryIndex} .option`);
+            
+            checkboxes.forEach((checkbox, index) => {
+                if (checkbox.checked) {
+                    enabledOptions.push(index);
+                }
+            });
+
+            if (enabledOptions.length === 0) {
+                alert('Please select at least one option before spinning!');
+                return;
+            }
+
+            // Disable spin button
+            const spinBtn = document.getElementById(`spin-btn-${categoryIndex}`);
+            spinBtn.disabled = true;
+            spinBtn.textContent = '🎰 SPINNING...';
+
+            // Start spinning animation
+            let spinCount = 0;
+            const maxSpins = 30 + Math.floor(Math.random() * 20); // Random spin duration
+            
+            spinningInterval = setInterval(() => {
+                // Remove previous highlights
+                optionElements.forEach(opt => opt.classList.remove('spinning'));
+                
+                // Highlight random enabled option
+                const randomIndex = enabledOptions[Math.floor(Math.random() * enabledOptions.length)];
+                optionElements[randomIndex].classList.add('spinning');
+                
+                spinCount++;
+                
+                if (spinCount >= maxSpins) {
+                    clearInterval(spinningInterval);
+                    
+                    // Final selection
+                    const finalIndex = enabledOptions[Math.floor(Math.random() * enabledOptions.length)];
+                    optionElements.forEach(opt => opt.classList.remove('spinning', 'selected'));
+                    optionElements[finalIndex].classList.add('selected');
+                    
+                    // Store selection
+                    selections[categoryIndex] = {
+                        category: activeCategories[categoryIndex].name,
+                        option: activeCategories[categoryIndex].options[finalIndex]
+                    };
+                    
+                    // Show next button
+                    const nextBtn = document.getElementById(`next-btn-${categoryIndex}`);
+                    nextBtn.style.display = 'block';
+                    
+                    // Update spin button
+                    spinBtn.textContent = '✅ SPUN';
+                    spinBtn.style.background = 'linear-gradient(45deg, #00b894, #00cec9)';
+                }
+            }, 100);
+        }
+
+        function nextCategory() {
+            // Mark current category as completed
+            const currentCategoryDiv = document.getElementById(`category-${currentCategory}`);
+            currentCategoryDiv.classList.remove('active');
+            currentCategoryDiv.classList.add('completed');
+            
+            currentCategory++;
+            updateProgress();
+            
+            if (currentCategory >= activeCategories.length) {
+                showFinalPrompt();
+            } else {
+                // Activate next category
+                const nextCategoryDiv = document.getElementById(`category-${currentCategory}`);
+                nextCategoryDiv.classList.add('active');
+                
+                // Enable spin button for next category
+                const spinBtn = document.getElementById(`spin-btn-${currentCategory}`);
+                spinBtn.disabled = false;
+            }
+        }
+
+        function updateProgress() {
+            const progressFill = document.getElementById('progressFill');
+            const progress = (currentCategory / activeCategories.length) * 100;
+            progressFill.style.width = `${progress}%`;
+        }
+
+        function showFinalPrompt() {
+            const categoriesContainer = document.getElementById('categories');
+            const finalPrompt = document.getElementById('finalPrompt');
+            const promptResult = document.getElementById('promptResult');
+            
+            categoriesContainer.style.display = 'none';
+            finalPrompt.style.display = 'block';
+            
+            // Generate final prompt
+            const promptText = selections.map(selection => 
+                `<strong>${selection.category}:</strong> ${selection.option}`
+            ).join('<br>');
+            
+            promptResult.innerHTML = promptText;
+            
+            // Update progress to 100%
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '100%';
+        }
+
+        function spinAll() {
+            if (isSpinningAll) return;
+            
+            isSpinningAll = true;
+            const spinAllBtn = document.getElementById('spinAllBtn');
+            spinAllBtn.disabled = true;
+            spinAllBtn.textContent = '🎰 Spinning All...';
+            
+            // Reset to first category
+            currentCategory = 0;
+            selections = [];
+            
+            // Remove all active/completed states
+            const categoryDivs = document.querySelectorAll('.category');
+            categoryDivs.forEach(div => {
+                div.classList.remove('active', 'completed');
+            });
+            
+            // Start spinning all categories sequentially
+            spinAllCategories();
+        }
+
+        function spinAllCategories() {
+            if (currentCategory >= activeCategories.length) {
+                // All categories done, show final prompt
+                showFinalPrompt();
+                isSpinningAll = false;
+                const spinAllBtn = document.getElementById('spinAllBtn');
+                spinAllBtn.disabled = false;
+                spinAllBtn.textContent = '🎰 Spin All';
+                return;
+            }
+            
+            // Activate current category
+            const currentCategoryDiv = document.getElementById(`category-${currentCategory}`);
+            currentCategoryDiv.classList.add('active');
+            
+            // Get enabled options for current category
+            const enabledOptions = [];
+            const checkboxes = document.querySelectorAll(`#options-${currentCategory} input[type="checkbox"]`);
+            const optionElements = document.querySelectorAll(`#options-${currentCategory} .option`);
+            
+            checkboxes.forEach((checkbox, index) => {
+                if (checkbox.checked) {
+                    enabledOptions.push(index);
+                }
+            });
+
+            if (enabledOptions.length === 0) {
+                // If no options selected, select all by default
+                checkboxes.forEach(checkbox => checkbox.checked = true);
+                enabledOptions.push(...Array.from({length: checkboxes.length}, (_, i) => i));
+            }
+
+            // Update spin button for current category
+            const spinBtn = document.getElementById(`spin-btn-${currentCategory}`);
+            spinBtn.disabled = true;
+            spinBtn.textContent = '🎰 SPINNING...';
+
+            // Start spinning animation
+            let spinCount = 0;
+            const maxSpins = 20 + Math.floor(Math.random() * 10); // Shorter spins for auto mode
+            
+            spinningInterval = setInterval(() => {
+                optionElements.forEach(opt => opt.classList.remove('spinning'));
+                
+                const randomIndex = enabledOptions[Math.floor(Math.random() * enabledOptions.length)];
+                optionElements[randomIndex].classList.add('spinning');
+                
+                spinCount++;
+                
+                if (spinCount >= maxSpins) {
+                    clearInterval(spinningInterval);
+                    
+                    // Final selection
+                    const finalIndex = enabledOptions[Math.floor(Math.random() * enabledOptions.length)];
+                    optionElements.forEach(opt => opt.classList.remove('spinning', 'selected'));
+                    optionElements[finalIndex].classList.add('selected');
+                    
+                    // Store selection
+                    selections[currentCategory] = {
+                        category: activeCategories[currentCategory].name,
+                        option: activeCategories[currentCategory].options[finalIndex]
+                    };
+                    
+                    // Update spin button
+                    spinBtn.textContent = '✅ SPUN';
+                    spinBtn.style.background = 'linear-gradient(45deg, #00b894, #00cec9)';
+                    
+                    // Mark category as completed
+                    currentCategoryDiv.classList.remove('active');
+                    currentCategoryDiv.classList.add('completed');
+                    
+                    // Move to next category
+                    currentCategory++;
+                    updateProgress();
+                    
+                    // Continue with next category after a short delay
+                    setTimeout(() => {
+                        spinAllCategories();
+                    }, 500);
+                }
+            }, 80); // Faster spinning for auto mode
+        }
+
+        function multiGenerate() {
+            if (isMultiGenerating) return;
+            
+            const countInput = document.getElementById('multiGenCount');
+            const count = parseInt(countInput.value) || 5;
+            
+            if (count < 1 || count > 50) {
+                alert('Please enter a number between 1 and 50');
+                return;
+            }
+            
+            isMultiGenerating = true;
+            multiPrompts = [];
+            
+            const multiGenBtn = document.getElementById('multiGenBtn');
+            const spinAllBtn = document.getElementById('spinAllBtn');
+            
+            multiGenBtn.disabled = true;
+            spinAllBtn.disabled = true;
+            multiGenBtn.textContent = `🎰 Generating ${count} prompts...`;
+            
+            // Generate multiple prompts
+            generateMultiplePrompts(count, 0);
+        }
+
+        function generateMultiplePrompts(totalCount, currentIndex) {
+            if (currentIndex >= totalCount) {
+                // All prompts generated, show results
+                showMultiResults();
+                return;
+            }
+            
+            // Generate a single prompt
+            const prompt = generateSinglePrompt();
+            multiPrompts.push(prompt);
+            
+            // Update progress
+            const progress = ((currentIndex + 1) / totalCount) * 100;
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = `${progress}%`;
+            
+            // Continue with next prompt after a short delay
+            setTimeout(() => {
+                generateMultiplePrompts(totalCount, currentIndex + 1);
+            }, 200);
+        }
+
+        function generateSinglePrompt() {
+            const prompt = {};
+            
+            activeCategories.forEach((category, categoryIndex) => {
+                // Get enabled options for this category (if DOM elements exist)
+                const checkboxes = document.querySelectorAll(`#options-${categoryIndex} input[type="checkbox"]`);
+                let enabledOptions = [];
+                
+                if (checkboxes.length > 0) {
+                    // DOM elements exist, use checkbox states
+                    checkboxes.forEach((checkbox, index) => {
+                        if (checkbox.checked) {
+                            enabledOptions.push(index);
+                        }
+                    });
+                }
+                
+                // If no options enabled or no DOM elements, use all options
+                if (enabledOptions.length === 0) {
+                    enabledOptions.push(...Array.from({length: category.options.length}, (_, i) => i));
+                }
+                
+                // Select random option
+                const randomIndex = enabledOptions[Math.floor(Math.random() * enabledOptions.length)];
+                prompt[category.name] = category.options[randomIndex];
+            });
+            
+            return prompt;
+        }
+
+        function showMultiResults() {
+            const categoriesContainer = document.getElementById('categories');
+            const multiResults = document.getElementById('multiResults');
+            const multiResultsContainer = document.getElementById('multiResultsContainer');
+            
+            categoriesContainer.style.display = 'none';
+            multiResults.style.display = 'block';
+            
+            // Display all generated prompts
+            multiResultsContainer.innerHTML = multiPrompts.map((prompt, index) => {
+                const promptText = Object.entries(prompt).map(([category, option]) => 
+                    `${category}: ${option}`
+                ).join(' • ');
+                return `
+                    <div class="multi-prompt-item">
+                        <span class="multi-prompt-number">${index + 1}</span>
+                        ${promptText}
+                    </div>
+                `;
+            }).join('');
+            
+            // Reset progress bar
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '100%';
+            
+            isMultiGenerating = false;
+            
+            // Re-enable buttons
+            const multiGenBtn = document.getElementById('multiGenBtn');
+            const spinAllBtn = document.getElementById('spinAllBtn');
+            multiGenBtn.disabled = false;
+            spinAllBtn.disabled = false;
+            multiGenBtn.textContent = '🎲 Multi-Roll';
+        }
+
+        function resetGame() {
+            currentCategory = 0;
+            selections = [];
+            isSpinningAll = false;
+            isMultiGenerating = false;
+            
+            // Reset display
+            const categoriesContainer = document.getElementById('categories');
+            const finalPrompt = document.getElementById('finalPrompt');
+            const multiResults = document.getElementById('multiResults');
+            
+            categoriesContainer.style.display = 'grid';
+            finalPrompt.style.display = 'none';
+            multiResults.style.display = 'none';
+            
+            // Reset buttons
+            const spinAllBtn = document.getElementById('spinAllBtn');
+            const multiGenBtn = document.getElementById('multiGenBtn');
+            spinAllBtn.disabled = false;
+            spinAllBtn.textContent = '🎰 Spin All';
+            multiGenBtn.disabled = false;
+            multiGenBtn.textContent = '🎲 Multi-Roll';
+            
+            // Reinitialize
+            initializeGame();
+        }
+
+        // Initialize the game when page loads
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>
